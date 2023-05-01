@@ -1,44 +1,58 @@
-import { Observable, debounceTime, distinctUntilChanged, fromEvent, timeout } from "rxjs";
-import { map } from "rxjs";
-
-
+import {fromEvent, Observable} from 'rxjs';
+import {debounceTime, distinctUntilChanged, map, takeUntil} from 'rxjs/operators';
 
 // const search$ = new Observable<Event>(observer => {
-//     console.log('Start in observable')
-//     const search = document.getElementById('search')
-//     if (!search) {
-//         console.log('element does not exist')
-//     } else {
-//     search.addEventListener('input', (event) => {
-//     observer.next(event)
-//     })
+//   const search = document.getElementById('search');
+//   const stop = document.getElementById('stop');
+//
+//   if (!search || !stop) {
+//     observer.error('Element does not exist on the page');
+//     return;
+//   }
+//   const onSearch = event => {
+//     checkSubscription();
+//     observer.next(event);
+//   };
+//
+//   const onStop = event => {
+//     checkSubscription();
+//     observer.complete();
+//     clear();
+//   };
+//
+//   search.addEventListener('input', onSearch);
+//   stop.addEventListener('click', onStop);
+//
+//   const checkSubscription = () => {
+//     if (observer.closed) {
+//       clear();
 //     }
+//   };
+//
+//   const clear = () => {
+//     search.removeEventListener('input', onSearch);
+//     stop.removeEventListener('click', onStop);
+//   };
+// });
 
-//     console.log('end in observable')
-     
-// })
+const search$: Observable<Event> = fromEvent<Event>(
+  document.getElementById('search'),
+  'input'
+);
 
-// setTimeout только потому, что без него дом дерево отрисовывется позже чем появляется 
+const stop$: Observable<Event> = fromEvent<Event>(
+  document.getElementById('stop'),
+  'click'
+);
 
-
-setTimeout(() => {
-    const search$: Observable <Event> = fromEvent<Event>(
-  document.getElementById('search') as HTMLInputElement,
-    'input'
-    )
-    
-    console.log('start subscribe')
-    search$.pipe(
-        map(event => {
-            return (event.target as HTMLInputElement).value;
-           
-        }), debounceTime(1000),     
-        // не отрабатывает если значение не измеилось
-        distinctUntilChanged()
-    ).subscribe(val => {
-    console.log(1)
-    console.log(val)
-})
-
-console.log('end subscribe')
-}, 5)
+search$.pipe(
+  map(event => {
+    return (event.target as HTMLInputElement).value;
+  }),
+  debounceTime(500),
+  map(value => value.length > 3 ? value : ''),
+  distinctUntilChanged(),
+  takeUntil(stop$),
+).subscribe(value => {
+  console.log(value);
+});
